@@ -1,9 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 public class PlayerController : MonoBehaviour
 {
+
+    public static event Action<int> ScoreChanged;
+    public static event Action WinReached;
 
     public float speed;
 
@@ -12,12 +16,17 @@ public class PlayerController : MonoBehaviour
     float xinput;
     float yinput;
 
-    int score = 0;
+    public int score = 0;
     public int winScore;
     public GameObject Wintext;
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        if (Wintext != null)
+        {
+            Wintext.SetActive(false);
+        }
+        ScoreChanged?.Invoke(score);
     }
 
 
@@ -26,11 +35,10 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(transform.position.y < -5f)
+        if (transform.position.y < -5f)
         {
-            SceneManager.LoadScene("Games");
+            RestartGame();
         }
-        
     }
 
     private void FixedUpdate()
@@ -38,20 +46,26 @@ public class PlayerController : MonoBehaviour
         xinput = Input.GetAxis("Horizontal");
         yinput = Input.GetAxis("Vertical");
 
-        rb.AddForce(xinput * speed,0,yinput * speed);
+        rb.AddForce(xinput * speed, 0, yinput * speed);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.tag == "coin")
+        if (other.gameObject.CompareTag("coin"))
         {
             other.gameObject.SetActive(false);
             score++;
-            if(score >= winScore)
+            ScoreChanged?.Invoke(score);
+            if (score >= winScore)
             {
-                Wintext.SetActive(true);
+                Wintext?.SetActive(true);
+                WinReached?.Invoke();
             }
         }
     }
-    
+
+    private void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
 }
